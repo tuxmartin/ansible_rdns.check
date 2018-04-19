@@ -1,0 +1,30 @@
+---
+- name: Initialize an empty list for PTR records
+  set_fact:
+    dns_ptr: []
+
+- name: Initialize an empty list for A records
+  set_fact:
+    dns_a: []        
+
+#- debug: var=ips
+
+- name: Get PTR records
+  set_fact:
+    dns_ptr: "{{ dns_ptr + [ lookup('dig', '{{ item }}', '@8.8.8.8', 'qtype=PTR') ] }}"
+  with_items:
+    - "{{ ips }}"
+#- debug: var=dns_ptr
+
+- name: Get A records
+  set_fact:
+    dns_a: "{{ dns_a + [ lookup('dig', '{{ item }}', '@8.8.8.8', 'qtype=A') ] }}"
+  with_items:
+    - "{{ dns_ptr }}"
+#- debug: var=dns_a
+
+#- debug: var={{ ips | difference(dns_a) }}
+- name: Reverse DNS test 
+  fail:
+    msg: "rDNS record - forward error"
+  when: ips | difference(dns_a) != []
